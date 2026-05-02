@@ -31,3 +31,6 @@ The driver sees the pending request on their dashboard and approves it. The back
 
 **8. Trip completes and ratings are submitted**  
 After the departure date passes, the system marks the trip as `completed`. Both the driver and passenger can then submit a star rating (1–5) and a written review, stored in the `Ratings` table and reflected in each user's `average_rating`.
+
+
+Website/Program used to create the diagrams: ["Draw-Io"](https://app.diagrams.net/)
