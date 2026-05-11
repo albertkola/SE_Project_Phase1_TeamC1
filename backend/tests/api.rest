@@ -1,0 +1,428 @@
+### Hop In — REST API test collection
+### Use with VS Code "REST Client" extension (humao.rest-client)
+### Run requests in order: auth → trips → bookings → ratings → notifications → admin
+### After login, copy the token into @driverToken / @passengerToken / @adminToken
+
+@host = http://localhost:5000
+@contentType = application/json
+
+# ──────────────────────────────────────────────────────────────────────────
+# HEALTH
+# ──────────────────────────────────────────────────────────────────────────
+
+### GET /api/health
+GET {{host}}/api/health
+
+# ──────────────────────────────────────────────────────────────────────────
+# AUTH
+# ──────────────────────────────────────────────────────────────────────────
+
+### Register driver — VALID
+POST {{host}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Albert Kola",
+  "email": "albert@test.com",
+  "phone": "+355691111111",
+  "password": "hopin12345",
+  "role": "driver"
+}
+
+### Register passenger — VALID
+POST {{host}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Roena Vrana",
+  "email": "roena@test.com",
+  "phone": "+355692222222",
+  "password": "hopin12345",
+  "role": "passenger"
+}
+
+### Register — INVALID (missing fields, short password, bad role)
+POST {{host}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "bad",
+  "password": "123",
+  "role": "admin"
+}
+
+### Register — INVALID (duplicate email → 409)
+POST {{host}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Dup",
+  "email": "albert@test.com",
+  "phone": "+355690000000",
+  "password": "hopin12345",
+  "role": "driver"
+}
+
+### Login driver
+# @name loginDriver
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "albert@test.com",
+  "password": "hopin12345"
+}
+
+###
+@driverToken = {{loginDriver.response.body.data.token}}
+
+### Login passenger
+# @name loginPassenger
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "roena@test.com",
+  "password": "hopin12345"
+}
+
+###
+@passengerToken = {{loginPassenger.response.body.data.token}}
+
+### Login — INVALID (wrong password)
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{ "email": "albert@test.com", "password": "wrongpass" }
+
+### Login — INVALID (unknown email)
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{ "email": "noone@nowhere.com", "password": "whatever1" }
+
+### Logout — no token (401)
+POST {{host}}/api/auth/logout
+
+### Logout — with token
+POST {{host}}/api/auth/logout
+Authorization: Bearer {{driverToken}}
+
+# ──────────────────────────────────────────────────────────────────────────
+# USERS
+# ──────────────────────────────────────────────────────────────────────────
+
+### GET /api/users/me
+GET {{host}}/api/users/me
+Authorization: Bearer {{driverToken}}
+
+### GET /api/users/:id (public)
+GET {{host}}/api/users/1
+
+### GET /api/users/:id — not found
+GET {{host}}/api/users/9999
+
+### PATCH /api/users/me — valid update
+PATCH {{host}}/api/users/me
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{ "phone": "+355699999999" }
+
+### PATCH /api/users/me — INVALID (tries to change role)
+PATCH {{host}}/api/users/me
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{ "role": "admin" }
+
+### PATCH /api/users/me — INVALID (tries to change email)
+PATCH {{host}}/api/users/me
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{ "email": "new@test.com" }
+
+# ──────────────────────────────────────────────────────────────────────────
+# TRIPS
+# ──────────────────────────────────────────────────────────────────────────
+
+### POST /api/trips — VALID (driver)
+# @name createTrip
+POST {{host}}/api/trips
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{
+  "departure_city": "Tirana",
+  "destination_city": "Durrës",
+  "departure_date": "2026-12-01",
+  "departure_time": "08:00",
+  "total_seats": 4,
+  "price_per_seat": 500,
+  "pickup_points": [
+    { "location_name": "Skanderbeg Square", "pickup_time": "07:55" },
+    { "location_name": "21 Dhjetori",       "pickup_time": "07:45" }
+  ]
+}
+
+###
+@tripId = {{createTrip.response.body.data.trip.trip_id}}
+@pickupId = {{createTrip.response.body.data.trip.pickup_points.0.pickup_id}}
+
+### POST /api/trips as passenger — INVALID (403)
+POST {{host}}/api/trips
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{
+  "departure_city": "Tirana", "destination_city": "Durrës",
+  "departure_date": "2026-12-01", "departure_time": "08:00",
+  "total_seats": 4, "price_per_seat": 500,
+  "pickup_points": [{ "location_name": "X", "pickup_time": "07:00" }]
+}
+
+### POST /api/trips — INVALID (same cities, past date, 9 seats, 0 pickups)
+POST {{host}}/api/trips
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{
+  "departure_city": "Tirana", "destination_city": "tirana",
+  "departure_date": "2020-01-01", "departure_time": "08:00",
+  "total_seats": 9, "price_per_seat": -1, "pickup_points": []
+}
+
+### GET /api/trips
+GET {{host}}/api/trips
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/trips with filters
+GET {{host}}/api/trips?origin=Tirana&date=2026-12-01&maxPrice=1000
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/trips with bad date
+GET {{host}}/api/trips?date=not-a-date
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/trips/:id
+GET {{host}}/api/trips/{{tripId}}
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/trips/:id — not found
+GET {{host}}/api/trips/9999
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/trips/driver/me
+GET {{host}}/api/trips/driver/me
+Authorization: Bearer {{driverToken}}
+
+### GET /api/trips/driver/me as passenger — 403
+GET {{host}}/api/trips/driver/me
+Authorization: Bearer {{passengerToken}}
+
+### PATCH /api/trips/:id — VALID (no bookings yet)
+PATCH {{host}}/api/trips/{{tripId}}
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{ "price_per_seat": 600 }
+
+### PATCH /api/trips/:id — wrong role (403)
+PATCH {{host}}/api/trips/{{tripId}}
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "price_per_seat": 700 }
+
+### PATCH /api/trips/:id/cancel — wrong role (403)
+PATCH {{host}}/api/trips/{{tripId}}/cancel
+Authorization: Bearer {{passengerToken}}
+
+# ──────────────────────────────────────────────────────────────────────────
+# BOOKINGS
+# ──────────────────────────────────────────────────────────────────────────
+
+### POST /api/bookings — VALID (passenger)
+# @name createBooking
+POST {{host}}/api/bookings
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": {{tripId}}, "pickup_id": {{pickupId}} }
+
+###
+@bookingId = {{createBooking.response.body.data.booking.booking_id}}
+
+### POST /api/bookings — duplicate (409)
+POST {{host}}/api/bookings
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": {{tripId}}, "pickup_id": {{pickupId}} }
+
+### POST /api/bookings — driver tries (403)
+POST {{host}}/api/bookings
+Authorization: Bearer {{driverToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": {{tripId}}, "pickup_id": {{pickupId}} }
+
+### POST /api/bookings — bad pickup (mismatched trip)
+POST {{host}}/api/bookings
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": {{tripId}}, "pickup_id": 1 }
+
+### POST /api/bookings — bad trip
+POST {{host}}/api/bookings
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": 9999, "pickup_id": {{pickupId}} }
+
+### GET /api/bookings/me
+GET {{host}}/api/bookings/me
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/bookings/trip/:id (driver)
+GET {{host}}/api/bookings/trip/{{tripId}}
+Authorization: Bearer {{driverToken}}
+
+### GET /api/bookings/trip/:id as passenger — 403
+GET {{host}}/api/bookings/trip/{{tripId}}
+Authorization: Bearer {{passengerToken}}
+
+### PATCH /api/bookings/:id/approve as passenger — 403
+PATCH {{host}}/api/bookings/{{bookingId}}/approve
+Authorization: Bearer {{passengerToken}}
+
+### PATCH /api/bookings/:id/approve — VALID (driver)
+PATCH {{host}}/api/bookings/{{bookingId}}/approve
+Authorization: Bearer {{driverToken}}
+
+### PATCH /api/bookings/:id/approve again (409)
+PATCH {{host}}/api/bookings/{{bookingId}}/approve
+Authorization: Bearer {{driverToken}}
+
+### PATCH /api/bookings/:id/reject after confirmed (409)
+PATCH {{host}}/api/bookings/{{bookingId}}/reject
+Authorization: Bearer {{driverToken}}
+
+### PATCH /api/bookings/:id/cancel — passenger
+PATCH {{host}}/api/bookings/{{bookingId}}/cancel
+Authorization: Bearer {{passengerToken}}
+
+### PATCH /api/bookings/:id/cancel as driver — 403
+PATCH {{host}}/api/bookings/{{bookingId}}/cancel
+Authorization: Bearer {{driverToken}}
+
+# ──────────────────────────────────────────────────────────────────────────
+# NOTIFICATIONS
+# ──────────────────────────────────────────────────────────────────────────
+
+### GET /api/notifications (driver)
+GET {{host}}/api/notifications
+Authorization: Bearer {{driverToken}}
+
+### GET /api/notifications (passenger)
+GET {{host}}/api/notifications
+Authorization: Bearer {{passengerToken}}
+
+### PATCH /api/notifications/:id/read
+PATCH {{host}}/api/notifications/1/read
+Authorization: Bearer {{passengerToken}}
+
+### PATCH /api/notifications/read-all
+PATCH {{host}}/api/notifications/read-all
+Authorization: Bearer {{passengerToken}}
+
+# ──────────────────────────────────────────────────────────────────────────
+# RATINGS  (only after a trip's status is 'completed')
+# ──────────────────────────────────────────────────────────────────────────
+
+### POST /api/ratings — too early (trip still active → 409)
+POST {{host}}/api/ratings
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": {{tripId}}, "stars": 5, "review_text": "Great driver!" }
+
+### POST /api/ratings — invalid stars (out of range)
+POST {{host}}/api/ratings
+Authorization: Bearer {{passengerToken}}
+Content-Type: {{contentType}}
+
+{ "trip_id": {{tripId}}, "stars": 7 }
+
+### GET /api/ratings/user/:id
+GET {{host}}/api/ratings/user/1
+Authorization: Bearer {{passengerToken}}
+
+# ──────────────────────────────────────────────────────────────────────────
+# ADMIN
+# (1) Promote a user manually:
+#     docker exec -it hopin-postgres psql -U user -d hopin \
+#       -c "UPDATE users SET role='admin' WHERE email='admin@test.com';"
+# (2) Re-login that user to mint an admin JWT.
+# ──────────────────────────────────────────────────────────────────────────
+
+### Login admin (after manual promotion)
+# @name loginAdmin
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{ "email": "admin@test.com", "password": "hopin12345" }
+
+###
+@adminToken = {{loginAdmin.response.body.data.token}}
+
+### GET /api/admin/stats
+GET {{host}}/api/admin/stats
+Authorization: Bearer {{adminToken}}
+
+### GET /api/admin/stats as passenger — 403
+GET {{host}}/api/admin/stats
+Authorization: Bearer {{passengerToken}}
+
+### GET /api/admin/users
+GET {{host}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+
+### GET /api/admin/users with filters
+GET {{host}}/api/admin/users?role=driver&search=alb
+Authorization: Bearer {{adminToken}}
+
+### PATCH /api/admin/users/:id — deactivate
+PATCH {{host}}/api/admin/users/2
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{ "is_active": false }
+
+### PATCH /api/admin/users/:id — reactivate
+PATCH {{host}}/api/admin/users/2
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{ "is_active": true }
+
+### PATCH /api/admin/users/:id — INVALID (no boolean)
+PATCH {{host}}/api/admin/users/2
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{ "is_active": "yes" }
+
+### DELETE /api/admin/bookings/:id
+DELETE {{host}}/api/admin/bookings/{{bookingId}}
+Authorization: Bearer {{adminToken}}
+
+### DELETE /api/admin/trips/:id
+DELETE {{host}}/api/admin/trips/{{tripId}}
+Authorization: Bearer {{adminToken}}
+
+### DELETE /api/admin/users/:id
+DELETE {{host}}/api/admin/users/9999
+Authorization: Bearer {{adminToken}}

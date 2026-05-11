@@ -1,0 +1,18 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+.DS_Store
+dist/
+build/
+coverage/
+.vscode/
+.idea/
+
+# Exclude documentation and reports
+CHANGELOG.md
+audit_report.md.resolved
+team_contributions_report.md.resolved
+"team roles and contribution(logical).txt"

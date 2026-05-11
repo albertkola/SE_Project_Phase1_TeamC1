@@ -1,0 +1,52 @@
+Albert Kola (Team Lead & Backend Core)
+Completed Work: Albert established the backend foundation by setting up the Express architecture, Docker Compose environment, and the initial PostgreSQL schema.
+
+Completed Work: He developed the authentication flows (JWT/bcrypt) and the core trip endpoints, including the implementation of Redis caching for trip searches.
+
+Completed Work: As team lead, he managed project hygiene by rotating compromised secrets and documenting the project state.
+
+Upcoming Work: While his core backend tasks are complete, he will need to coordinate with the frontend team to ensure seamless API integration for the upcoming driver flows.
+
+Roena Vrana (Frontend Architecture & Discovery)
+Completed Work: Roena built the React application structure using Vite and Tailwind v3.
+
+Completed Work: She implemented the global Uber-dark design system and common UI components, such as Buttons, Inputs, and Cards.
+
+Completed Work: For the passenger flow, she developed the SearchTrips discovery page, complete with a debounced search hook and complex UI filters.
+
+Upcoming Work: She will likely support the remaining frontend prompts by ensuring new screens adhere to the global routing and state management standards she established.
+
+Elert Xhaferaj (Backend Bookings & Integration)
+Completed Work: Elert engineered the backend booking system, strictly enforcing 11 complex business rules using SQL transactions.
+
+Completed Work: He built the pickup point logic and the notification service, ensuring appropriate user alerts for booking approvals and rejections.
+
+Completed Work: On the integration side, he created the frontend API wrappers (bookings.api.js and trips.api.js) to bridge the Express backend with React.
+
+Anisa Rami (Frontend Auth & User Journey)
+Completed Work: Anisa developed the two-step user registration and login interfaces, complete with client-side validation.
+
+Completed Work: She built the critical passenger journey screens, including the BookingConfirm and BookingHistory views.
+
+Completed Work: She implemented the reusable RatingModal for the post-trip review process.
+
+Upcoming Work: She is scheduled to tackle "Prompt 9" to build the shared Profile view and the dedicated Notifications page.
+
+Endri Hysaj (QA, Admin & Documentation)
+Completed Work: Endri built the backend admin services, creating endpoints for platform statistics and user/trip deletion.
+
+Completed Work: He compiled the api.rest VS Code testing suite, covering ~50 test cases to ensure backend stability.
+
+Completed Work: He is responsible for maintaining the project documentation and changelog tracking.
+
+Upcoming Work: He will handle "Prompt 10" on the frontend, which involves building the Admin Dashboard and the user/trip management tables.
+
+Notable Team Dependencies
+Booking Rules vs. Core DB (Elert & Albert): Elert's complex booking logic relies entirely on Albert's database schema, specifically the available_seats tracking and the auth middleware for Role-Based Access Control.
+
+User Journey UI vs. Shared Components (Anisa & Roena): Anisa's booking and rating screens depend heavily on the foundational design system and common UI components (like Modal and Badge) built by Roena.
+
+Frontend Caching vs. Backend Caching (Roena & Albert): Roena's custom useTrips hook implements client-side map caching, which must work harmoniously with Albert's 60-second Redis cache on the backend to prevent stale data.
+
+Admin Panel vs. Global Error Handling (Endri, Albert & Roena): Endri's upcoming frontend Admin Dashboard requires both Albert's RBAC middleware to gate access and Roena's axios.js interceptors to gracefully handle unauthorized responses.
+
