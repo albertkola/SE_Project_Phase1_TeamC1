@@ -26,7 +26,7 @@ The core goals of testing in this project are:
 
 -----
 
-## 3. Chosen Components
+## 3. Focus On Testing Components
 
 Three components were selected for testing based on their central role in the system, their complexity, and the severity of failure if they malfunction:
 
@@ -44,7 +44,7 @@ The booking service enforces the full lifecycle of a seat reservation: creation,
 
 -----
 
-## 4. Test Cases
+## 4. Preparing Test Cases
 
 ### 4.1 Authentication — Test Cases
 
@@ -95,7 +95,7 @@ The booking service enforces the full lifecycle of a seat reservation: creation,
 
 -----
 
-## 5. Testing Tools
+## 5. Writing Test Code
 
 The test suite is written in **JavaScript** using the following tools and libraries:
 
@@ -133,9 +133,7 @@ npx jest tests/auth.test.js --verbose
 
 -----
 
-## 6. Test Code
-
-### 6.1 Authentication Tests (`auth.test.js`)
+### 5.1 Authentication Tests (`auth.test.js`)
 
 ```javascript
 const request = require("supertest");
@@ -271,7 +269,7 @@ describe("POST /api/auth/login", () => {
 });
 ```
 
-### 6.2 Trip Search Tests (`trips.search.test.js`)
+### 5.2 Trip Search Tests (`trips.search.test.js`)
 
 ```javascript
 const request = require("supertest");
@@ -382,7 +380,7 @@ describe("GET /api/trips (search)", () => {
 });
 ```
 
-### 6.3 Booking Tests (`bookings.test.js`)
+### 5.3 Booking Tests (`bookings.test.js`)
 
 ```javascript
 const request  = require("supertest");
@@ -564,11 +562,11 @@ describe("Booking edge cases", () => {
 
 -----
 
-## 7. Test Execution Results
+## 6. Runing Tests
 
 All tests were executed using `npx jest --verbose` against the running Docker containers (`docker-compose up -d postgres redis`).
 
-### 7.1 Authentication Results
+### 6.1 Authentication Results
 
 ```
 PASS  tests/auth.test.js
@@ -597,7 +595,7 @@ Time:        2.841 s
 
 -----
 
-### 7.2 Trip Search Results
+### 6.2 Trip Search Results
 
 ```
 PASS  tests/trips.search.test.js
@@ -626,7 +624,7 @@ Time:        1.934 s
 
 -----
 
-### 7.3 Booking Flow Results
+### 6.3 Booking Flow Results
 
 ```
 PASS  tests/bookings.test.js
@@ -658,7 +656,7 @@ Time:        2.217 s
 
 -----
 
-### 7.4 Overall Summary
+### 6.4 Overall Summary
 
 |Suite               |Tests Run|Passed|Failed|Skipped|
 |--------------------|---------|------|------|-------|
@@ -675,7 +673,7 @@ Time:        7.012 s
 
 -----
 
-## 8. Test Coverage and Reflection
+## 7. Test Coverage
 
 ### Coverage Analysis
 
